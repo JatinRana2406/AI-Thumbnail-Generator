@@ -138,7 +138,7 @@ async def stream_job(job_id: str):
                             "imagekit_url": t.imagekit_url,
                             "variants": variants,
                         })
-                        yield f"event: thumbnail_uploaded\ndata: {data}\n\n"
+                        yield f"event: thumbnail_ready\n data: {data}\n\n"
                         sent_thumbnails.add(t.id)
                     
                     elif t.status == "failed":
