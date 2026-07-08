@@ -14,7 +14,7 @@ async def generate_thumbnail(prompt: str, style_prompt: str, headshot_url: str) 
     )
 
     response = client.responses.create(
-        model="gpt-4o",
+        model="gpt-5.4-mini",
         input=[
             {
                 "role": "user",
