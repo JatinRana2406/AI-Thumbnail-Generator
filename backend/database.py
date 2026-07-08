@@ -1,8 +1,8 @@
 from sqlmodel import SQLModel, create_engine, Session
-from backend.config import DATABASE_URL
+from config import DATABASE_URL
 
 engine = create_engine(DATABASE_URL, echo=False, connect_args=
-                       {"chech_same_thread": False})
+                       {"check_same_thread": False})
 
 def create_tables():
     SQLModel.metadata.create_all(engine)

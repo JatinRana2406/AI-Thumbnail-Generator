@@ -29,7 +29,7 @@ class CreateJobResponse (BaseModel) :
     job_id: str
 
 class ThumbnailResponse(BaseModel) : 
-    id: int
+    id: str
     style_name: str
     status: str
     imagekit_url: str | None = None
@@ -37,7 +37,7 @@ class ThumbnailResponse(BaseModel) :
     variants: dict | None = None
 
 class JobResponse(BaseModel):
-    id: int
+    id: str
     prompt: str
     num_thumbnails: int
     headshot_url: str
@@ -55,7 +55,7 @@ async def upload_headshot(file: UploadFile = File(...)):
     )
     return {"url": url}
 
-@router.post("/jobs", response_class=CreateJobResponse)
+@router.post("/jobs", response_model=CreateJobResponse)
 async def create_job(request: CreateJobRequest, session: Session= Depends
                      (get_session)):
     if request.num_thumbnails < 1 or request.num_thumbnails > 3:
@@ -114,7 +114,7 @@ def get_job(job_id: str, session: Session = Depends(get_session)):
         thumbnails=thumb_response,
     )
 
-@router.get("/jobs/ {job_id}/stream")
+@router.get("/jobs/{job_id}/stream")
 async def stream_job(job_id: str):
     async def event_generator():
         from database import engine
@@ -124,7 +124,7 @@ async def stream_job(job_id: str):
             with Session(engine) as session:
                 job = session.get(Job, job_id)
                 if not job:
-                    yield f"event: error\ndata: {json.dumps({'error': "Job not found"})}"
+                    yield f"event: error\ndata: {json.dumps({'error': 'Job not found'})}\n\n"
                     return 
                 thumbnails = session.exec(select(Thumbnail).where(Thumbnail.job_id == job_id)).all()
                 for t in thumbnails:
