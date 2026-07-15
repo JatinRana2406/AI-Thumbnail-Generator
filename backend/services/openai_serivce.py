@@ -13,14 +13,14 @@ async def generate_thumbnail(prompt: str, style_prompt: str, headshot_url: str) 
         "shown in the provided reference headshot photo. Keep their likeness accurate."
     )
 
-    response = client.responses.create(
+    response = await client.responses.create(
         model="gpt-5.4-mini",
         input=[
             {
                 "role": "user",
                 "content": [
-                    {"type": "input_image", "url": headshot_url},
-                    {"type": "text", "text": full_prompt}
+                    {"type": "input_image", "image_url": headshot_url},
+                    {"type": "input_text", "text": full_prompt}
                 ]
             }
         ],
@@ -35,6 +35,6 @@ async def generate_thumbnail(prompt: str, style_prompt: str, headshot_url: str) 
 
     for item in response.output:
         if item.type == "image_generation_call" and item.result:
-            return base64.b64(item.result)
+            return base64.b64decode(item.result)
         
     raise RuntimeError("No image generation result found in the response")

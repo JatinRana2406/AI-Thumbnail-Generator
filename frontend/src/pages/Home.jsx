@@ -1,3 +1,9 @@
+import {
+  uploadHeadshot,
+  createJob,
+  subscribeToJob,
+} from "../api";
+
 import { useState } from "react";
 
 import Navbar from "../components/Navbar";
@@ -16,9 +22,58 @@ function Home() {
 
   const [thumbnails, setThumbnails] = useState([]);
 
-  const generateThumbnail = () => {
-    alert("Backend integration coming next!");
-  };
+  const generateThumbnail = async () => {
+  if (!image) {
+    alert("Please upload a headshot.");
+    return;
+  }
+
+  if (!prompt.trim()) {
+    alert("Please enter a prompt.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setThumbnails([]);
+
+    // Upload headshot
+    const uploadResponse = await uploadHeadshot(image);
+
+    // Create generation job
+    const jobResponse = await createJob({
+      prompt,
+      numThumbnails: count,
+      headshotUrl: uploadResponse.url,
+    });
+
+    // Listen for progress
+    subscribeToJob(jobResponse.job_id, {
+      onThumbnailReady: (thumbnail) => {
+        setThumbnails((prev) => [...prev, thumbnail]);
+      },
+
+      onThumbnailFailed: (thumbnail) => {
+        console.error("Thumbnail failed:", thumbnail);
+      },
+
+      onJobComplete: () => {
+        console.log("Job completed");
+        setLoading(false);
+      },
+
+      onError: (err) => {
+        console.error(err);
+        setLoading(false);
+      },
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+    setLoading(false);
+  }
+};
 
   return (
     <div className="container">

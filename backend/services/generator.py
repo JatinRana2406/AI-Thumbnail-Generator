@@ -39,11 +39,11 @@ async def generate_single_thumbnail(thumbnail_id: str, prompt: str, headshot_url
         session.add(thumb)
         session.commit()
 
-    style_prompt = STYLES(style_name)
+    style_prompt = STYLES[style_name]
 
     #AI call
     try:
-        image_byte = generate_thumbnail(prompt, style_prompt, headshot_url)
+        image_byte = await generate_thumbnail(prompt, style_prompt, headshot_url)
         
         with Session(engine) as session:
             thumb = session.get(Thumbnail, thumbnail_id)
@@ -53,7 +53,7 @@ async def generate_single_thumbnail(thumbnail_id: str, prompt: str, headshot_url
         url = upload_file(
             file_bytes=image_byte,
             file_name=f"{thumbnail_id}.png",
-            folder_path=f"thumbnails/{job_id}/",
+            folder=f"thumbnails/{job_id}/",
         )
 
         #DB call save the url +mark uploaded 
@@ -94,7 +94,7 @@ async def process_job(job_id: str):
             select(Thumbnail).where(Thumbnail.job_id == job_id)
         )
 
-        thumbnails_ids = [t.ib for t in thumbnails]
+        thumbnails_ids = [t.id for t in thumbnails]
 
         tasks = [
             generate_single_thumbnail(tid, prompt, headshot_url)
@@ -106,10 +106,12 @@ async def process_job(job_id: str):
         with Session(engine) as session:
             thumbnails = session.exec(
                 select(Thumbnail).where(Thumbnail.job_id == job_id)
-            ).add()
+            ).all()
+
             all_failed = all(t.status == "failed" for t in thumbnails)
-            session.get(Job, job_id)
+
+            job = session.get(Job, job_id)
             job.status = "failed" if all_failed else "completed"
-            session.add(job)
+
             session.commit()
     
