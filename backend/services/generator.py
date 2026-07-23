@@ -4,7 +4,7 @@ import logging
 from sqlmodel import Session, select
 from database import engine
 from models import Job, Thumbnail
-from services.openai_serivce import generate_thumbnail
+from services.ai_services import generate_thumbnail
 from services.imagekit_service import upload_file
 
 logger = logging.getLogger(__name__)
@@ -41,20 +41,26 @@ async def generate_single_thumbnail(thumbnail_id: str, prompt: str, headshot_url
 
     style_prompt = STYLES[style_name]
 
+    print("Calling AI service...")
     #AI call
     try:
         image_byte = await generate_thumbnail(prompt, style_prompt, headshot_url)
+        print(f"Received image: {len(image_byte)} bytes")
         
         with Session(engine) as session:
             thumb = session.get(Thumbnail, thumbnail_id)
             job_id = thumb.job_id
 
         #upload this image
+        print("Uploading to ImageKit...")
+
         url = upload_file(
             file_bytes=image_byte,
             file_name=f"{thumbnail_id}.png",
             folder=f"thumbnails/{job_id}/",
         )
+
+        print("ImageKit URL:", url)
 
         #DB call save the url +mark uploaded 
         with Session(engine) as session:
@@ -74,6 +80,8 @@ async def generate_single_thumbnail(thumbnail_id: str, prompt: str, headshot_url
             thumb.error_message = str(e) [:500]
             session.add(thumb)
             session.commit()
+
+print("========== PROCESS JOB STARTED ==========")
 
 async def process_job(job_id: str):
     #mark job as processing
